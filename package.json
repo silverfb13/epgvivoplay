@@ -1,0 +1,11 @@
+{
+  "name": "epg-vivoplay",
+  "version": "1.0.0",
+  "description": "EPG VivoPlay gerado automaticamente",
+  "main": "scripts/generate_epg.js",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dayjs": "^1.11.9",
+    "xmlbuilder": "^15.1.1"
+  }
+}
