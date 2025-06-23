@@ -14,19 +14,23 @@ async function fetchChannels() {
 }
 
 async function fetchEPG(pid, start, end) {
-  const url = `https://contentapi-br.cdn.telefonica.com/25/default/pt-BR/schedules?starttime=${start}&endtime=${end}&livechannelpids=${pid}&limit=1000`;
+  const url = `https://contentapi-br.cdn.telefonica.com/25/default/pt-BR/schedules?ca_deviceTypes=null|401&ca_channelmaps=779|null&starttime=${start}&endtime=${end}&livechannelpids=${pid}&limit=1000`;
+
   try {
     const response = await axios.get(url);
-    return response.data.Content || [];
-  } catch {
+    const programas = response.data.Content || [];
+    console.log(`Canal ${pid}: ${programas.length} programas encontrados.`);
+    return programas;
+  } catch (err) {
+    console.error(`Erro ao buscar EPG do canal ${pid}: ${err.message}`);
     return [];
   }
 }
 
 (async () => {
   const now = dayjs().tz('America/Sao_Paulo');
-  const startTime = now.subtract(1, 'day').startOf('day').unix(); // Ontem 00:00
-  const endTime = now.add(2, 'day').endOf('day').unix();          // Depois de amanhã 23:59
+  const startTime = now.subtract(1, 'day').startOf('day').unix();  // Ontem 00:00
+  const endTime = now.add(2, 'day').endOf('day').unix();           // Depois de amanhã 23:59
 
   console.log(`Gerando EPG VivoPlay de ${dayjs.unix(startTime).format()} até ${dayjs.unix(endTime).format()}`);
 
@@ -41,15 +45,14 @@ async function fetchEPG(pid, start, end) {
     const channelName = channel.Name;
     const iconUrl = channel.Images?.Icon?.[0]?.Url || '';
 
-    // Cria a tag <channel>
+    // Criar a tag <channel>
     tv.ele('channel', { id: pid })
       .ele('display-name', {}, channelName).up()
       .ele('icon', { src: iconUrl }).up();
 
-    // Busca programação do canal
+    // Buscar grade de programação do canal
     const programs = await fetchEPG(pid, startTime, endTime);
 
-    // Cria as tags <programme>
     programs.forEach(program => {
       const start = dayjs.unix(program.Start).utc().format('YYYYMMDDHHmmss +0000');
       const stop = dayjs.unix(program.End).utc().format('YYYYMMDDHHmmss +0000');
